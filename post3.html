@@ -1,0 +1,72 @@
+<style>
+    body {
+       background-image: url("1.jpeg"); 
+       background-size: cover; 
+       background-attachment: fixed;         
+       background-position: center center; 
+       background-color:rgba(255,255,255,0.3);
+       background-blend-mode:lighten;
+    }
+    .diet_form {
+        background-image:url("2.png");
+        padding: 10px 30px;
+        width: fit-content;
+       
+
+    }
+    form dl dt {
+        width: 200px;
+        height: 40px;
+        padding: 10px 0;
+        line-height: 40px;
+        float: left;
+    }
+    form dl dd {
+        padding: 10px 0;
+        margin: 0;
+    }
+    .box {
+        box-sizing: border-box;
+        width: 150px !important;
+        height: 40px !important;
+        margin: 0 !important;
+        padding: 0 10px !important;
+    }
+    .calc-btn {
+        width: 80px;
+        height: 30px;
+        border: 1px solid #333;
+    }
+    .calc-btn:hover {
+        cursor: pointer;
+    }
+    </style>
+    <form class="diet_form"action="index.html">
+        <script src="./js/sum.js"></script>
+        <script>
+            function calc(num, sum) {
+                cal = num/(sum-1);
+                b = dis(cal,5);
+                a=document.getElementById('lean').value = b;
+                sessionStorage.setItem("one",a);
+                sessionStorage.setItem("sum",sum);
+            }
+            function dis(data,digit){
+                c = Math.round( data * Math.pow( 10, digit )) / Math.pow( 10, digit );
+                console.log(c);
+                return c
+            }
+        </script>
+
+        <dl>
+            <dt>合計金額：</dt>
+            <dd><input type="number" class="box" name="num" step="0.01"></dd>
+            <dt>参加人数：</dt>
+            <dd><input type="number" class="box" name="sum"></dd>
+            <p><input type="button" class="calc-btn" onclick="calc(num.value, sum.value);" value="計算"></p>
+            <dt>一人当たりの金額：</dt>
+            <dd><input id="lean" class="box" type="text" readonly=""></dd>
+            <input type="button" class="btn" onclick="location.href='so-kin.html'" value="送金する"><br>
+        </dl>
+    </form>
+    

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+ 
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+ 
+    <title>返金ページ</title>
+ 
+<style type="text/css">
+ 
+body {
+  word-break: break-all;
+  word-wrap: break-word;
+  margin-bottom: 50px;
+}
+
+body {        
+       background-image: url("2.jpg"); 
+       background-size: cover; 
+       background-attachment: fixed;         
+       background-position: center center; 
+       background-color:rgba(255,255,255,0.3);
+       background-blend-mode:lighten;
+    }
+textarea {
+  line-height: 1.2em;
+}
+ 
+</style>
+ 
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </head>
+ 
+<body class="container-fluid m-3">
+ 
+<div class="row mb-2">
+<div class="col-12">
+<span style="font-size: 2rem;">返金ページ</span><span class="mx-2"></span>
+</div>
+</div>
+ 
+<div class="row mb-3">
+  <div id="valid_mm_log" class="col-12"></div>
+</div>
+ 
+<div class="row mb-3">
+  <div class="col-12">
+<button id="connect_mm_btn" type="button" class="btn-danger p-2 rounded" style="width:250px;">MetaMaskと接続する</button>
+  </div>
+</div>
+ 
+<div class="row mb-3">
+  <div id="connect_mm_log" class="col-12"></div>
+</div>
+ 
+<div class="row mb-3">
+  <div class="col-12">
+
+<!--送金先アカウントアドレス(0x～)：<br>
+<input id="to_address_txt" type="text" style="width:400px;"><br>-->
+
+送金先アカウントアドレス(0x～)：<br>
+<input id="to_address_txt" type="txt" style="width: 400pt;border:none" value="" readonly>
+<br>
+送金先ニックネーム：<br>
+<input id="nickname" type="text" style="width:100pt" placeholder="" readonly><br>
+送金額：<br>
+<label><input id="to_amounts_txt" type="text" style="width:50pt;border:none" value="" readonly></label><br>
+
+
+<textarea id="to_data_txt" rows="6" style="width: 400px;" hidden></textarea>
+<br>
+<div class="row mb-3">
+  <div class="col-12">
+<button id="send_amounts_btn" type="button" class="btn-primary p-2 rounded" style="width:250px;">内容で送金する</button>
+</div>
+</div>
+  </div>
+</div>
+ 
+<div class="row mb-3">
+  <div id="send_amounts_log" class="col-12"></div>
+</div>
+ 
+<script>//<![CDATA[
+
+  document.getElementById("to_amounts_txt").value = sessionStorage.getItem("one");
+  document.getElementById("to_address_txt").value = sessionStorage.getItem("winnerAdd");
+  document.getElementById("nickname").value = sessionStorage.getItem("winnerName");
+  //document.getElementById("to_amounts_txt").value = 0.002;
+  const wei2eth = 0.000000000000000001;
+  const eth2wei = 1000000000000000000;
+ 
+  var valid_mm = false;
+  var account_mm = "";
+  var network_id = 0;
+  var network_name = "";
+  var balance = 0;
+ 
+  function escape_html (string) {
+    if(typeof string !== 'string') {
+      return string;
+    }
+    return string.replace(/[&'`"<>]/g, function(match) {
+     return {
+        '&': '&amp;',
+        "'": '&#x27;',
+        '`': '&#x60;',
+        '"': '&quot;',
+        '<': '&lt;',
+        '>': '&gt;',
+      }[match]
+    });
+  }
+ 
+  function trimingForm(parts) {
+    if( $('#' + parts).length ) {
+      var pval = $('#' + parts).val();
+      if( pval.length > 0 ){
+        pval = pval.trim();
+        $('#' + parts).val(pval.trim());
+      }
+    }
+  }
+ 
+  function valid_metamask() {
+    if (typeof window.ethereum !== 'undefined') {
+      valid_mm = true;
+      $("#valid_mm_log").html("MetaMaskが認識できました。");
+    }
+    else {
+      valid_mm = false;
+      $("#valid_mm_log").html("MetaMaskがインストールされていません。");
+    }
+  }
+ 
+  async function connect_metamask() {
+    valid_metamask();
+ 
+    if(!valid_mm) {
+      return;
+    }
+ 
+    $("#connect_mm_log").html("MetaMaskと接続中...");
+ 
+    try {
+      var accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (accounts.length > 0) {
+ 
+        //https://chainlist.org/
+        var network_names = {
+          1: "イーサリアムメインネット",
+          3: "Ropstenテストネットワーク",
+          4: "Rinkebyテストネットワーク",
+          42: "Kovanテストネットワーク",
+          61: "イーサリアムClassicメインネット",
+        };
+ 
+        var network_id_raw = await window.ethereum.request({ method: 'eth_chainId' });
+        network_id = parseInt(network_id_raw);
+        network_name = "不明";
+ 
+        if (network_id in network_names) {
+          network_name = network_names[network_id];
+        }
+ 
+        var msg = "MetaMaskと接続できました。<br>接続しているネットワーク：" + network_name;
+ 
+        account_mm = accounts[0];
+        msg += "<br>アカウントのアドレス：" + account_mm;
+ 
+        var amount = await window.ethereum.request({
+          method: "eth_getBalance",
+          params: [
+            account_mm,
+            "latest",
+          ],
+        });
+        // wei -> ether
+        balance = parseInt(amount) * wei2eth;
+ 
+        msg += "<br>イーサリアム残高：" + balance + "ETH";
+ 
+        $("#connect_mm_log").html(msg);
+
+ 
+      }
+    } catch (err) {
+      if (err.code === 4001) {
+        // EIP-1193 userRejectedRequest error
+        $("#connect_mm_log").html("接続が拒否されました。<br>" + err.message);
+      } else {
+        console.error(err);
+        $("#connect_mm_log").html("接続エラーが発生しました。<br>" + err.message);
+      }
+    }
+ 
+  }
+ 
+  $(window).on('pageshow',function(){
+    valid_metamask();
+  });
+ 
+  $("#connect_mm_btn").on("click", function() {
+    connect_metamask();
+  });
+ 
+  window.ethereum.on("accountsChanged", (accountNo) => {
+    connect_metamask();
+  });
+ 
+  window.ethereum.on("chainChanged", (accountNo) => {
+    connect_metamask();
+  });
+ 
+  $("#send_amounts_btn").on("click", async function() {
+ 
+    trimingForm("to_address_txt");
+    trimingForm("to_amounts_txt");
+    trimingForm("to_data_txt");
+    var to_data_txt = $("#to_data_txt").val();
+    if (to_data_txt.length > 0) {
+      to_data_txt = to_data_txt.replace(/\r\n/g, "\n");
+      to_data_txt = to_data_txt.replace(/\n/g, "");
+    }
+    else {
+      to_data_txt = "";
+    }
+ 
+    if($("#to_address_txt").val().length <= 0 ||
+      $("#to_amounts_txt").val().length <= 0) {
+      $("#send_amounts_log").html("正しい値を入力してください。");
+      return;
+    }
+ 
+    connect_metamask();
+ 
+    if(network_id == 1 || network_id == 61) {
+      $("#send_amounts_log").html("本番ネットワークでの送金はできません。");
+      return;
+    }
+ 
+    if(parseFloat($("#to_amounts_txt").val()) > balance) {
+      $("#send_amounts_log").html("送金額相当のETHを保持していないようです。");
+      return;
+    }
+ 
+    if($("#to_address_txt").val() == window.ethereum.selectedAddress) {
+      $("#send_amounts_log").html("自分自身への送金はできません。");
+      return;
+    }
+ 
+    $("#send_amounts_log").html("送金トランザクション実行中...");
+ 
+    try {
+ 
+      var send_wei = parseFloat($("#to_amounts_txt").val()) * eth2wei;
+      var send_wei_str = "0x" + send_wei.toString(16);
+      var send_params = {
+        nonce: '0x00', // ignored by MetaMask
+        gasPrice: '', // customizable by user during MetaMask confirmation.
+        gas: '', // customizable by user during MetaMask confirmation.
+        to: $("#to_address_txt").val(), // Required except during contract publications.
+        from: window.ethereum.selectedAddress, // must match user's active address.
+        value: send_wei_str, // Only required to send ether to the recipient from the initiating external account.
+        data: to_data_txt, // Optional, but used for defining smart contract creation and interaction.
+        chainId: '', // Used to prevent transaction reuse across blockchains. Auto-filled by MetaMask.
+      };
+ 
+      var transaction_id = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [send_params],
+      });
+ 
+      $("#send_amounts_log").html("トランザクション完了：ID " + transaction_id);
+    }
+ 
+    catch (err) {
+      console.error(err);
+      $("#send_amounts_log").html("トランザクションエラーが発生しました。<br>" + err.message);
+    }
+ 
+  });
+ 
+//]]></script>
+ 
+ 
+</body>
+</html>
